@@ -1,0 +1,16 @@
+{
+  "name": "daleel",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Bilingual static Jordan travel marketplace with Firebase private trips and atomic cash-on-arrival bookings",
+  "scripts": {
+    "test": "node tests/app.test.cjs",
+    "test:rules": "firebase emulators:exec --project demo-daleel --only firestore,auth \"node tests/firestore.test.cjs && node tests/marketplace.test.cjs && node tests/integration.test.cjs\"",
+    "deploy": "firebase deploy --project daleel-4838c --only hosting,firestore:rules"
+  },
+  "devDependencies": {
+    "happy-dom": "20.14.5",
+    "firebase": "12.19.0",
+    "@firebase/rules-unit-testing": "5.0.2"
+  }
+}

@@ -1,0 +1,28 @@
+const {readFileSync}=require('node:fs');
+const {initializeTestEnvironment,assertSucceeds,assertFails}=require('@firebase/rules-unit-testing');
+const {doc,setDoc,getDoc,getDocs,collection,serverTimestamp,deleteDoc}=require('firebase/firestore');
+(async()=>{
+ const env=await initializeTestEnvironment({projectId:'demo-daleel',firestore:{host:'127.0.0.1',port:8085,rules:readFileSync('firestore.rules','utf8')}});
+ const a=env.authenticatedContext('alice',{email:'alice@example.com'}).firestore();
+ const b=env.authenticatedContext('bob',{email:'bob@example.com'}).firestore();
+ const anon=env.unauthenticatedContext().firestore();
+ const ref=doc(a,'users','alice');
+ await assertSucceeds(setDoc(ref,{uid:'alice',email:'alice@example.com',fullName:'Alice Test',createdAt:serverTimestamp()}));
+ await assertSucceeds(getDoc(ref));
+ await assertSucceeds(setDoc(ref,{fullName:'Alice Updated',bio:'Traveler',username:'alice_1',city:'Zarqa',travelMood:'مغامرة',photoData:'',updatedAt:serverTimestamp()},{merge:true}));
+ await assertFails(getDoc(doc(b,'users','alice')));
+ await assertFails(getDoc(doc(anon,'users','alice')));
+ await assertFails(setDoc(doc(b,'users','alice'),{bio:'hacked'},{merge:true}));
+ await assertFails(getDocs(collection(a,'users')));
+ await assertFails(setDoc(ref,{uid:'bob'},{merge:true}));
+ await assertFails(setDoc(ref,{email:'bob@example.com'},{merge:true}));
+ await assertFails(setDoc(ref,{fullName:'x'},{merge:true}));
+ await assertFails(setDoc(ref,{bio:'x'.repeat(501)},{merge:true}));
+ await assertFails(setDoc(ref,{photoData:'javascript:alert(1)'},{merge:true}));
+ await assertFails(setDoc(ref,{username:'<script>'},{merge:true}));
+ await assertFails(setDoc(ref,{role:'admin'},{merge:true}));
+ await assertSucceeds(setDoc(ref,{travelState:{dalil_trip_v1:'[]',dalil_plan_v1:'[[],[],[]]'},updatedAt:serverTimestamp()},{merge:true}));
+ await assertFails(deleteDoc(ref));
+ console.log('PASS: 16 ownership, validation and profile/travel persistence rule checks');
+ await env.cleanup();
+})().catch(e=>{console.error(e);process.exitCode=1;});
